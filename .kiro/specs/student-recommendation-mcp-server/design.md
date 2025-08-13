@@ -12,41 +12,66 @@ The architecture emphasizes performance through PostgreSQL's native querying cap
 
 ```mermaid
 graph TB
+    subgraph "Claude Desktop Client"
+        A[User Query] --> B[Claude Desktop]
+        B --> C[MCP Client]
+    end
+    
+    subgraph "MCP Protocol"
+        C --> D[JSON-RPC Connection]
+        D --> E[MCP Server]
+    end
+    
+    subgraph "EduMatch MCP Server"
+        E --> F[FastMCP Framework]
+        F --> G[Tool Handlers]
+        F --> H[Resource Handlers] 
+        F --> I[Prompt Templates]
+        
+        G --> J[programs_list Tool]
+        G --> K[rank_programs Tool]
+        H --> L[usage_guide Resource]
+        I --> M[program_summary Prompt]
+        
+        J --> N[Database Access Layer]
+        K --> N
+        N --> O[(PostgreSQL Database)]
+    end
+    
     subgraph "Data Pipeline"
-        A[Gold Layer Parquet Files] --> B[ETL Process]
-        B --> C[(PostgreSQL Database)]
-    end
-    
-    subgraph "MCP Server"
-        D[MCP Protocol Handler] --> E[Program Discovery Engine]
-        E --> F[Query Builder]
-        F --> G[Database Access Layer]
-        G --> C
-        
-        D --> H[Resource Handlers]
-        H --> G
-        
-        D --> I[Prompt Generator]
-        I --> J[Analytics Engine]
-        J --> G
-    end
-    
-    subgraph "Client Applications"
-        K[AI Agents] --> D
-        L[Student Portals] --> D
-        M[Counselor Tools] --> D
+        P[Gold Layer Parquet Files] --> Q[ETL Process]
+        Q --> O
     end
 ```
 
 ### Component Architecture
 
-The server follows a layered architecture optimized for program discovery and recommendation:
+The server follows a layered architecture optimized for MCP protocol communication and program discovery:
 
-- **MCP Protocol Layer**: Handles MCP message parsing, validation, and response formatting
-- **Program Discovery Layer**: Implements intelligent program search, filtering, and ranking
-- **Analytics Layer**: Provides insights and statistics from the educational data
-- **Data Access Layer**: Manages PostgreSQL connections, query optimization, and caching
+- **MCP Protocol Layer**: FastMCP framework handles JSON-RPC communication with Claude Desktop
+- **Tool Layer**: Implements `programs_list` and `rank_programs` functions with parameter validation
+- **Resource Layer**: Provides `usage_guide` documentation for AI agents
+- **Prompt Layer**: Offers `program_summary` template for consistent response formatting
+- **Data Access Layer**: Manages PostgreSQL connections and query execution
 - **Database Layer**: PostgreSQL with normalized schema and optimized indexes
+
+### MCP Protocol Flow
+
+**Connection Establishment:**
+1. Claude Desktop launches the MCP server using the configured uv command
+2. Server establishes JSON-RPC connection over stdin/stdout
+3. Claude requests available tools, resources, and prompts
+
+**Tool Execution:**
+1. Claude sends `tools/call` JSON-RPC message with tool name and parameters
+2. Server validates parameters using Pydantic schemas
+3. Server executes database queries and returns structured results
+4. Claude formats results using prompt templates for user presentation
+
+**Resource Access:**
+1. Claude requests `mcp://usage_guide` for documentation
+2. Server returns static guide with tool descriptions and examples
+3. Claude uses guide to understand available functionality
 
 ## Database Schema
 
@@ -118,6 +143,79 @@ CREATE INDEX idx_programs_institution ON programs(institution_id);
 CREATE INDEX idx_programs_duration ON programs(duration_months);
 CREATE INDEX idx_programs_tuition ON programs(tuition);
 ```
+
+## MCP Server Implementation
+
+### 1. FastMCP Framework Integration
+
+**Purpose**: Provides the MCP protocol implementation using the FastMCP framework
+
+**Key Features**:
+- Automatic JSON-RPC handling for Claude Desktop communication
+- Pydantic-based parameter validation for tools
+- Decorator-based tool, resource, and prompt registration
+- Built-in error handling and response formatting
+
+**Server Initialization**:
+```python
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("EduMatch MCP Server")
+
+@mcp.tool()
+def programs_list(args: ProgramsToolArguments):
+    """Tool implementation"""
+
+@mcp.resource("guide://usage")
+def usage_guide():
+    """Resource implementation"""
+
+@mcp.prompt()
+def program_summary():
+    """Prompt template"""
+```
+
+### 2. Tool Parameter Schemas
+
+**Purpose**: Define and validate parameters for MCP tools using Pydantic
+
+**Programs List Tool Schema**:
+```python
+class ProgramsToolArguments(BaseModel):
+    program_name: Optional[str] = None
+    country_name: Optional[str] = None
+    institution_name: Optional[str] = None
+    max_tuition: Optional[float] = None
+    limit: Optional[int] = 20
+    offset: Optional[int] = 0
+```
+
+**Rank Programs Tool Schema**:
+```python
+class RankProgramsArguments(BaseModel):
+    country_name: Optional[str] = None
+    institution_name: Optional[str] = None
+    max_tuition: Optional[float] = None
+    ranking_method: Optional[str] = "popularity"  # "popularity", "cost_effectiveness", "engagement"
+    limit: Optional[int] = 10
+```
+
+### 3. Database Query Implementation
+
+**Purpose**: Execute PostgreSQL queries based on MCP tool parameters
+
+**Programs List Query**:
+- Joins programs, countries, and institutions tables
+- Applies ILIKE filters for text searches
+- Supports pagination with LIMIT and OFFSET
+- Returns structured program data with engagement metrics
+
+**Rank Programs Query**:
+- Uses dynamic scoring formulas based on ranking method
+- Popularity: `total_views + (total_impressions * 0.1)`
+- Engagement: `ctr * 100`
+- Cost-effectiveness: `(total_views / tuition) * 1000`
+- Orders results by calculated ranking score
 
 ## Components and Interfaces
 
@@ -199,21 +297,15 @@ class QueryBuilder:
 
 **Purpose**: Implement MCP tools, resources, and prompts for program discovery
 
-**Tools**:
-- `search_programs`: Advanced program search with multiple filters
-- `rank_programs`: Score and rank programs based on engagement and preferences
-- `get_analytics`: Retrieve statistics and insights from the dataset
-- `compare_programs`: Side-by-side comparison of selected programs
+**Tools** (2 functions that DO things):
+- `programs_list`: Search and filter educational programs with multiple criteria (country, institution, program name, budget)
+- `rank_programs`: Rank programs by popularity, engagement, or cost-effectiveness using different scoring algorithms
 
-**Resources**:
-- `programs`: Paginated access to program data with filtering
-- `institutions`: Institution data with country relationships
-- `countries`: Country-level analytics and program summaries
+**Resources** (1 reference guide):
+- `usage_guide`: Static help document explaining available tools, parameters, and usage examples
 
-**Prompts**:
-- Program recommendation templates
-- Comparison summaries
-- Analytics interpretation guides
+**Prompts** (1 formatting template):
+- `program_summary`: Template for creating user-friendly program summaries and recommendations
 
 ### 5. Analytics Engine
 
