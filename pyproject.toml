@@ -1,0 +1,16 @@
+[project]
+name = "edumatch-mcp-server"
+version = "0.1.0"
+description = "EduMatch MCP Server for program recommendations"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp[cli]>=1.12.1",
+    "psycopg2-binary",
+]
+
+[project.scripts]
+edumatch-mcp-server = "server:main"
+
+[tool.uv]
+package = true
