@@ -458,3 +458,82 @@ Based on the notebook implementations:
 - Query performance testing with realistic data volumes
 - Foreign key constraint validation
 - Data integrity testing across all operations
+##
+ JSON-RPC Communication Protocol
+
+### How JSON-RPC Works in MCP Server
+
+**1. Claude Desktop call tool:**
+Instead of calling `programs_list()` directly, Claude sends a JSON message:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "programs_list",
+    "arguments": {
+      "country_name": "Germany",
+      "max_tuition": 15000
+    }
+  },
+  "id": 123
+}
+```
+
+**2.  MCP server receives this and:**
+- Parses the JSON message
+- Calls actual `programs_list()` function
+- Gets the results from database
+
+**3. The MCPserver sends back the results:**
+```json
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "programs": [
+      {"program_name": "Engineering", "tuition": 12000, ...},
+      {"program_name": "Computer Science", "tuition": 14000, ...}
+    ],
+    "count": 25
+  },
+  "id": 123
+}
+```
+
+### Why use JSON-RPC?
+
+1. **Different Languages**: Claude (written in one language) can call Python server
+2. **Different Processes**: They run as separate programs
+3. **Standardized**: Everyone knows how JSON-RPC works
+4. **Simple**: Just JSON messages back and forth
+
+### In this case:
+- **Claude Desktop** = JSON-RPC Client
+- **MCP Server** = JSON-RPC Server
+- **Communication** = JSON messages over stdin/stdout (like a pipe)
+
+It's basically a way to make function calls between different programs feel like regular function calls!
+
+## Development and Testing
+
+### Local Development with MCP Inspector
+```bash
+uv run mcp dev ./src/server.py
+```
+
+This command:
+- Starts your MCP server in development mode
+- Launches the MCP Inspector web interface
+- Allows you to test tools, resources, and prompts interactively
+- Shows the actual JSON-RPC messages being exchanged
+
+### Production with Claude Desktop
+```bash
+uv --directory /Users/vee/Desktop/univacity_mcp run src/server.py
+```
+
+This command is used by Claude Desktop to:
+- Launch your MCP server as a subprocess
+- Establish stdin/stdout JSON-RPC communication
+- Enable real-time program discovery conversations
