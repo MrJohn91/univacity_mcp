@@ -8,17 +8,17 @@ The MCP server reads data directly from PostgreSQL, which is pre-loaded and main
 
 ## Requirements
 
-### 1. Programs Resource - Query and Filtering
+### 1. Programs List Tool - Search and Filtering
 
-**User Story:** As a user (student/counselor), I want to query programs by specific criteria, so that I can find study programs that match my preferences for country, institution, and cost.
+**User Story:** As a user (student/counselor), I want to search programs by specific criteria, so that I can find study programs that match my preferences for country, institution, program name, and cost.
 
 #### Acceptance Criteria
 
-1. WHEN a user queries the programs resource with country filter THEN the system SHALL return programs available in specified countries
-2. WHEN a user queries the programs resource with institution filter THEN the system SHALL return programs from specified institutions
-3. WHEN a user queries the programs resource with cost filter THEN the system SHALL return programs within the specified tuition range
-4. WHEN multiple filters are applied THEN the system SHALL return programs matching all specified criteria with proper pagination
-5. WHEN accessing the programs resource THEN the system SHALL include program name, institution, country, duration, tuition, and engagement metrics
+1. WHEN a user calls the programs_list tool with country_name filter THEN the system SHALL return programs available in specified countries
+2. WHEN a user calls the programs_list tool with institution_name filter THEN the system SHALL return programs from specified institutions
+3. WHEN a user calls the programs_list tool with max_tuition filter THEN the system SHALL return programs within the specified tuition range
+4. WHEN a user calls the programs_list tool with program_name filter THEN the system SHALL return programs matching the specified name pattern
+5. WHEN multiple filters are applied THEN the system SHALL return programs matching all specified criteria with proper pagination using limit and offset
 
 ### 2. Rank Programs Tool - Scoring and Ranking
 
@@ -26,23 +26,35 @@ The MCP server reads data directly from PostgreSQL, which is pre-loaded and main
 
 #### Acceptance Criteria
 
-1. WHEN the rank_programs tool is called THEN the system SHALL rank programs using engagement metrics (CTR, views, impressions)
-2. WHEN popularity-based scoring is requested THEN the system SHALL weight programs by total views and impressions
-3. WHEN cost-effectiveness scoring is requested THEN the system SHALL consider tuition relative to program quality metrics
+1. WHEN the rank_programs tool is called with "popularity" method THEN the system SHALL rank programs using total views and impressions
+2. WHEN the rank_programs tool is called with "engagement" method THEN the system SHALL rank programs using click-through rates (CTR)
+3. WHEN the rank_programs tool is called with "cost_effectiveness" method THEN the system SHALL rank programs by views per tuition cost
 4. WHEN filters are provided THEN the system SHALL apply country, institution, and cost filters before ranking
-5. WHEN returning ranked results THEN the system SHALL include ranking score and key metrics used
+5. WHEN returning ranked results THEN the system SHALL include ranking score and method used
 
-### 3. Program Summary Prompt - User-Friendly Output
+### 3. Usage Guide Resource - Reference Documentation
+
+**User Story:** As an AI agent, I want to access usage documentation, so that I can understand available tools and provide accurate guidance to users.
+
+#### Acceptance Criteria
+
+1. WHEN the usage_guide resource is accessed THEN the system SHALL provide descriptions of all available tools
+2. WHEN accessing the usage guide THEN the system SHALL include key filter options and examples for each tool
+3. WHEN viewing the guide THEN the system SHALL explain data insights including metrics and cost information
+4. WHEN referencing the guide THEN the system SHALL provide practical examples of tool usage
+5. WHEN using the guide THEN the system SHALL help AI agents understand program data structure
+
+### 4. Program Summary Prompt - User-Friendly Output
 
 **User Story:** As an AI agent, I want to generate user-friendly summaries and recommendations, so that I can present program information in an accessible and engaging format.
 
 #### Acceptance Criteria
 
-1. WHEN the program_summary prompt is used THEN the system SHALL create friendly, informative program descriptions
+1. WHEN the program_summary prompt is used THEN the system SHALL provide a structured template for program presentations
 2. WHEN generating summaries THEN the system SHALL include key program details (name, institution, country, duration, tuition)
 3. WHEN creating recommendations THEN the system SHALL explain engagement metrics in user-friendly terms
-4. WHEN summarizing multiple programs THEN the system SHALL highlight key differences and similarities
-5. WHEN generating output THEN the system SHALL provide actionable recommendations for students
+4. WHEN summarizing multiple programs THEN the system SHALL provide total counts and key insights
+5. WHEN generating output THEN the system SHALL maintain a helpful and informative tone
 
 ### 4. Analytics and Insights Tool
 
@@ -106,24 +118,79 @@ The MCP server reads data directly from PostgreSQL, which is pre-loaded and main
 
 ## MCP Server Components (MVP)
 
-### Tool
-The MCP server exposes one core tool for program recommendations:
+### Tools (2 functions that DO things)
 
-1. **`rank_programs`** - Score and rank programs based on engagement metrics (CTR, views, impressions) and user preferences (country, institution, cost)
+1. **`programs_list`** - Searches database for educational programs with filters (country, budget, institution, program name) with pagination support
+2. **`rank_programs`** - Ranks programs by popularity, engagement, or cost-effectiveness using different scoring algorithms
 
-### Resource
-The MCP server provides read-only access to one primary resource:
+### Resources (1 reference guide)
 
-1. **`programs`** - Query programs by filters (country, institution, cost) with pagination and sorting capabilities
+1. **`usage_guide`** - Static help document explaining what tools are available and how to use them, including examples and data insights
 
-### Prompt
-The MCP server offers one guided prompt for user-friendly output:
+### Prompts (1 formatting template)
 
-1. **`program_summary`** - Generate user-friendly summary and recommendation text for programs, including key details and engagement metrics
+1. **`program_summary`** - Template telling AI assistants how to nicely format program recommendations for users with structured output
 
 ## Technical Notes
 
 The MCP server implements a Program Discovery Assistant architecture using PostgreSQL for efficient querying of educational program data. The system focuses on user experience through intelligent filtering, scoring algorithms, and natural language processing capabilities. Data is maintained externally from Parquet files, ensuring the MCP server always serves current analytics while providing fast, scalable access to program information for students and counselors worldwide.
 
+## Claude Desktop Integration
 
- uv run mcp dev ./src/server.py
+### 9. Claude Desktop Client Integration
+
+**User Story:** As a user, I want to access the EduMatch program discovery features directly through Claude Desktop, so that I can get personalized study program recommendations in a conversational interface.
+
+#### Acceptance Criteria
+
+1. WHEN Claude Desktop is configured with the EduMatch MCP server THEN the system SHALL be accessible through the "edumatch" server name
+2. WHEN a user asks Claude about study programs THEN Claude SHALL be able to call the programs_list and rank_programs tools
+3. WHEN Claude needs guidance THEN it SHALL access the usage_guide resource for tool documentation
+4. WHEN Claude presents program recommendations THEN it SHALL use the program_summary prompt template for consistent formatting
+5. WHEN the MCP server is running THEN Claude Desktop SHALL maintain a persistent connection for real-time program queries
+
+### Client Configuration
+
+The MCP server is configured in Claude Desktop with the following settings:
+
+```json
+{
+  "mcpServers": {
+    "edumatch": {
+      "command": "/opt/homebrew/bin/uv",
+      "args": ["--directory", "/Users/vee/Desktop/univacity_mcp", "run", "src/server.py"]
+    }
+  }
+}
+```
+
+### MCP Protocol Interaction Flow
+
+**How Claude Desktop communicates with the EduMatch MCP Server:**
+
+1. **Server Discovery**: Claude Desktop connects to the MCP server via the configured command and establishes a JSON-RPC connection
+2. **Capability Exchange**: Claude requests available tools, resources, and prompts from the server
+3. **Resource Access**: Claude can call `mcp://usage_guide` to understand available functionality
+4. **Tool Execution**: Claude makes JSON-RPC calls to execute tools with parameters
+5. **Prompt Templates**: Claude can request prompt templates to format responses consistently
+
+**User Experience Flow:**
+
+1. **User Query**: "Find engineering programs in Germany under $15,000"
+2. **Claude MCP Call**: `GET mcp://usage_guide` to understand available tools
+3. **Claude MCP Call**: `tools/call programs_list` with parameters `{country_name: "Germany", max_tuition: 15000, program_name: "engineering"}`
+4. **Server Response**: Database query results returned via MCP protocol
+5. **Claude MCP Call**: `prompts/get program_summary` to get formatting template
+6. **Claude Response**: Formats results using the template and presents to user
+
+## Development Commands
+
+### Local Development
+```bash
+uv run mcp dev ./src/server.py
+```
+
+### Production with Claude Desktop
+```bash
+uv --directory /Users/vee/Desktop/univacity_mcp run src/server.py
+```

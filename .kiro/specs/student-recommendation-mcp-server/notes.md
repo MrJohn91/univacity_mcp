@@ -74,3 +74,25 @@ Solutions:
 	•	Converted or cleaned nulls to native Python types to avoid type errors.
 	•	Used execute_batch for bulk insert.
 	•	Verified insertion by querying the database afterward.
+
+
+  {
+  "country_name": "Germany",
+  "limit": 5
+}
+
+
+
+{
+  "max_tuition": 20000,
+  "limit": 10
+}
+
+
+
+{
+  "ranking_method": "popularity",
+  "limit": 5
+}
+
+
