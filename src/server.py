@@ -26,7 +26,7 @@ class RankProgramsArguments(BaseModel):
     country_name: Optional[str] = None
     institution_name: Optional[str] = None
     max_tuition: Optional[float] = None
-    ranking_method: Optional[str] = "popularity"  # "popularity", "cost_effectiveness", "engagement"
+    ranking_method: Optional[str] = "popularity"  
     limit: Optional[int] = 10
 
 # ==========================
