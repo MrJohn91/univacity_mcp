@@ -15,7 +15,7 @@ def programs_endpoint(args: ProgramsToolArguments):
 def rank_endpoint(args: RankProgramsArguments):
     return rank_programs(args)
 
-# Optional: usage guide endpoint
+# usage guide 
 @app.get("/usage")
 def usage():
     return usage_guide()
