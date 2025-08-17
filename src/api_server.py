@@ -1,6 +1,7 @@
 from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
 import os
-from pydantic import BaseModel
+import asyncio
 from server import programs_list, rank_programs, usage_guide, ProgramsToolArguments, RankProgramsArguments
 
 app = FastAPI(title="EduMatch MCP API")
@@ -20,6 +21,16 @@ def rank_endpoint(args: RankProgramsArguments):
 def usage():
     return usage_guide()
 
+# SSE endpoint for MCP Inspector
+@app.get("/sse")
+async def sse_endpoint():
+    async def event_generator():
+        i = 1
+        while True:
+            yield f"data: Event {i}\n\n"
+            i += 1
+            await asyncio.sleep(1)
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 if __name__ == "__main__":
     import uvicorn
