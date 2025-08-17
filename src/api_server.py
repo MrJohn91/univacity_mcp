@@ -1,6 +1,7 @@
 from fastapi import FastAPI
+import os
 from pydantic import BaseModel
-from src.server import programs_list, rank_programs, usage_guide, ProgramsToolArguments, RankProgramsArguments
+from server import programs_list, rank_programs, usage_guide, ProgramsToolArguments, RankProgramsArguments
 
 app = FastAPI(title="EduMatch MCP API")
 
@@ -18,3 +19,8 @@ def rank_endpoint(args: RankProgramsArguments):
 @app.get("/usage")
 def usage():
     return usage_guide()
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
