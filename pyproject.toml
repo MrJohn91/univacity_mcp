@@ -5,8 +5,12 @@ description = "EduMatch MCP Server for program recommendations"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "fastapi>=0.116.1",
     "mcp[cli]>=1.12.1",
+    "pandas>=2.3.1",
     "psycopg2-binary",
+    "pyarrow>=21.0.0",
+    "uvicorn>=0.35.0",
 ]
 
 [project.scripts]
