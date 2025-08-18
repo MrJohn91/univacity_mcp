@@ -24,11 +24,13 @@ def usage():
 # MCP tool call endpoint
 @app.post("/tools/call")
 async def mcp_tool_call(request_data: dict):
-    tool_name = request_data.get("params", {}).get("name")
-    tool_args = request_data.get("params", {}).get("arguments", {})
     request_id = request_data.get("id")
-    
+    tool_params = request_data.get("params", {})
+    tool_name = tool_params.get("name")
+    tool_args = tool_params.get("arguments", {})
+
     try:
+        # Convert incoming arguments into Pydantic model
         if tool_name == "programs_list":
             args = ProgramsToolArguments(**tool_args)
             result = programs_list(args)
@@ -41,14 +43,13 @@ async def mcp_tool_call(request_data: dict):
                 "id": request_id,
                 "error": {"code": -32601, "message": "Method not found"}
             }
-        
+
         return {
             "jsonrpc": "2.0",
             "id": request_id,
-            "result": {
-                "content": [{"type": "text", "text": str(result)}]
-            }
+            "result": result  # <-- Return actual JSON, not string
         }
+
     except Exception as e:
         return {
             "jsonrpc": "2.0",
@@ -60,6 +61,8 @@ async def mcp_tool_call(request_data: dict):
 @app.get("/sse")
 async def sse_endpoint():
     async def event_generator():
+        import json
+
         # Send MCP initialize message
         init_msg = {
             "jsonrpc": "2.0",
@@ -77,9 +80,8 @@ async def sse_endpoint():
                 }
             }
         }
-        import json
         yield f"data: {json.dumps(init_msg)}\n\n"
-        
+
         # Send tools list
         tools_msg = {
             "jsonrpc": "2.0",
@@ -119,12 +121,12 @@ async def sse_endpoint():
             }
         }
         yield f"data: {json.dumps(tools_msg)}\n\n"
-        
+
         # Keep connection alive
         while True:
-            yield f"data: {{\"type\": \"ping\"}}\n\n"
+            yield f"data: {json.dumps({'type': 'ping'})}\n\n"
             await asyncio.sleep(30)
-            
+
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 if __name__ == "__main__":
