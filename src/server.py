@@ -1,6 +1,6 @@
 # src/server.py
 
-from mcp.server.fastmcp.server import FastMCPy
+from mcp.server.fastapi import FastMCP
 from pydantic import BaseModel
 from typing import Optional
 from config import get_connection
