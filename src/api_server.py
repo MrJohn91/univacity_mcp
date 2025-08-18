@@ -77,7 +77,8 @@ async def sse_endpoint():
                 }
             }
         }
-        yield f"data: {init_msg}\n\n"
+        import json
+        yield f"data: {json.dumps(init_msg)}\n\n"
         
         # Send tools list
         tools_msg = {
@@ -117,7 +118,7 @@ async def sse_endpoint():
                 ]
             }
         }
-        yield f"data: {tools_msg}\n\n"
+        yield f"data: {json.dumps(tools_msg)}\n\n"
         
         # Keep connection alive
         while True:
