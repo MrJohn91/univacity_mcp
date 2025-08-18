@@ -3,7 +3,7 @@
 from mcp.server.fastmcp import FastMCP
 from pydantic import BaseModel
 from typing import Optional
-from config import get_connection
+from src.config import get_connection
 import time
 
 # ==========================

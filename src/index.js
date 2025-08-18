@@ -7,7 +7,7 @@ export default {
     // Handle MCP SSE endpoint
     if (url.pathname === '/sse' || url.pathname === '/stream') {
       const targetUrl = RENDER_URL_BASE + '/sse' + url.search;
-      
+
       try {
         const upstreamResponse = await fetch(targetUrl, {
           method: 'GET',
@@ -27,7 +27,7 @@ export default {
         return new Response('Error: ' + err.message, { status: 500 });
       }
     }
-    
+
     // Fallback SSE endpoint
     if (url.pathname === '/sse-fallback') {
       const stream = new ReadableStream({
@@ -49,9 +49,9 @@ export default {
               }
             }
           };
-          
+
           controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(initMessage)}\n\n`));
-          
+
           // Send tools list
           const toolsMessage = {
             jsonrpc: '2.0',
@@ -90,7 +90,7 @@ export default {
               ]
             }
           };
-          
+
           controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(toolsMessage)}\n\n`));
         }
       });
@@ -107,10 +107,26 @@ export default {
 
     // Handle MCP tool calls by proxying to FastAPI
     if (url.pathname === '/tools/call') {
-      const body = await request.json();
+      if (request.method !== 'POST') {
+        return new Response(JSON.stringify({
+          jsonrpc: '2.0',
+          error: { code: -32600, message: 'Invalid request method, use POST' }
+        }), { headers: { 'Content-Type': 'application/json' } });
+      }
+
+      let body;
+      try {
+        body = await request.json();
+      } catch (err) {
+        return new Response(JSON.stringify({
+          jsonrpc: '2.0',
+          error: { code: -32700, message: 'Invalid JSON body' }
+        }), { headers: { 'Content-Type': 'application/json' } });
+      }
+
       const toolName = body.params?.name;
       const toolArgs = body.params?.arguments || {};
-      
+
       let endpoint = '';
       if (toolName === 'programs_list') {
         endpoint = '/programs';
@@ -123,16 +139,16 @@ export default {
           error: { code: -32601, message: 'Method not found' }
         }), { headers: { 'Content-Type': 'application/json' } });
       }
-      
+
       try {
         const response = await fetch(RENDER_URL_BASE + endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(toolArgs)
         });
-        
+
         const result = await response.json();
-        
+
         return new Response(JSON.stringify({
           jsonrpc: '2.0',
           id: body.id,
