@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 import os
 import asyncio
-from .server import programs_list, rank_programs, usage_guide, ProgramsToolArguments, RankProgramsArguments
+from src.server import programs_list, rank_programs, usage_guide, ProgramsToolArguments, RankProgramsArguments
 
 app = FastAPI(title="EduMatch MCP API")
 
