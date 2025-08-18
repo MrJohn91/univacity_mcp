@@ -22,30 +22,82 @@ def usage():
     return usage_guide()
 
 # -----------------------------
-# MCP Tool call endpoint (JSON-RPC)
+# MCP Protocol endpoints
 # -----------------------------
-@app.post("/tools/call")
-async def mcp_tool_call(request_data: dict):
+@app.post("/")
+async def mcp_handler(request_data: dict):
     request_id = request_data.get("id")
-    tool_params = request_data.get("params", {})
-    tool_name = tool_params.get("name")
-    tool_args = tool_params.get("arguments", {})
+    method = request_data.get("method")
+    params = request_data.get("params", {})
 
     try:
-        if tool_name == "programs_list":
-            args = ProgramsToolArguments(**tool_args)
-            result = programs_list(args)
-        elif tool_name == "rank_programs":
-            args = RankProgramsArguments(**tool_args)
-            result = rank_programs(args)
-        else:
+        if method == "initialize":
             return {
                 "jsonrpc": "2.0",
                 "id": request_id,
-                "error": {"code": -32601, "message": "Method not found"}
+                "result": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {"tools": {}, "resources": {}, "prompts": {}},
+                    "serverInfo": {"name": "EduMatch MCP Server", "version": "1.0.0"}
+                }
             }
-
-        return {"jsonrpc": "2.0", "id": request_id, "result": result}
+        
+        elif method == "tools/list":
+            return {
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "result": {
+                    "tools": [
+                        {
+                            "name": "programs_list",
+                            "description": "Search and filter educational programs",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "program_name": {"type": "string"},
+                                    "country_name": {"type": "string"},
+                                    "institution_name": {"type": "string"},
+                                    "max_tuition": {"type": "number"},
+                                    "limit": {"type": "number", "default": 20},
+                                    "offset": {"type": "number", "default": 0}
+                                }
+                            }
+                        },
+                        {
+                            "name": "rank_programs",
+                            "description": "Get ranked program recommendations",
+                            "inputSchema": {
+                                "type": "object",
+                                "properties": {
+                                    "country_name": {"type": "string"},
+                                    "institution_name": {"type": "string"},
+                                    "max_tuition": {"type": "number"},
+                                    "ranking_method": {"type": "string", "default": "popularity"},
+                                    "limit": {"type": "number", "default": 10}
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        
+        elif method == "tools/call":
+            tool_name = params.get("name")
+            tool_args = params.get("arguments", {})
+            
+            if tool_name == "programs_list":
+                args = ProgramsToolArguments(**tool_args)
+                result = programs_list(args)
+            elif tool_name == "rank_programs":
+                args = RankProgramsArguments(**tool_args)
+                result = rank_programs(args)
+            else:
+                return {"jsonrpc": "2.0", "id": request_id, "error": {"code": -32601, "message": "Method not found"}}
+            
+            return {"jsonrpc": "2.0", "id": request_id, "result": {"content": [result]}}
+        
+        else:
+            return {"jsonrpc": "2.0", "id": request_id, "error": {"code": -32601, "message": "Method not found"}}
 
     except Exception as e:
         return {"jsonrpc": "2.0", "id": request_id, "error": {"code": -32603, "message": str(e)}}
@@ -125,26 +177,7 @@ async def streamable_endpoint(request: Request):
     """
     StreamableHttp-compatible endpoint for MCP Inspector.
     """
-    data = await request.json()
-    request_id = data.get("id")
-    tool_params = data.get("params", {})
-    tool_name = tool_params.get("name")
-    tool_args = tool_params.get("arguments", {})
-
-    try:
-        if tool_name == "programs_list":
-            args = ProgramsToolArguments(**tool_args)
-            result = programs_list(args)
-        elif tool_name == "rank_programs":
-            args = RankProgramsArguments(**tool_args)
-            result = rank_programs(args)
-        else:
-            return {"jsonrpc": "2.0", "id": request_id, "error": {"code": -32601, "message": "Method not found"}}
-
-        return {"jsonrpc": "2.0", "id": request_id, "result": result}
-
-    except Exception as e:
-        return {"jsonrpc": "2.0", "id": request_id, "error": {"code": -32603, "message": str(e)}}
+    return await mcp_handler(await request.json())
 
 # -----------------------------
 # Run server
