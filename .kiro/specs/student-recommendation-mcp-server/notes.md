@@ -96,3 +96,34 @@ Solutions:
 }
 
 
+
+
+{
+  "program_name": "computer science",
+  "country_name": "united kingdom",
+  "institution_name": "",
+  "max_tuition": 100000,
+  "limit": 20,
+  "offset": 0
+}
+
+
+
+# testing inspector
+npx @modelcontextprotocol/inspector --url "https://univacitymcp.nfluncvjohn.workers.dev/stream" --transportType sse
+
+# cloudflare url
+https://univacitymcp.nfluncvjohn.workers.dev/sse
+
+
+uvicorn src.api_server:app --reload --host 0.0.0.0 --port 8000
+
+
+
+http://127.0.0.1:6277/docs
+
+
+uv run mcp dev ./src/server.py
+
+
+univacitymcp.nfluncvjohn.workers.dev
