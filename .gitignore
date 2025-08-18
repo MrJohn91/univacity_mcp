@@ -42,3 +42,10 @@ Thumbs.db
 # Data files
 local_data/
 metastore_db/
+
+
+# Node modules
+node_modules/
+
+# Database dumps
+*.dump
