@@ -94,7 +94,7 @@ async def mcp_handler(request_data: dict):
             else:
                 return {"jsonrpc": "2.0", "id": request_id, "error": {"code": -32601, "message": "Method not found"}}
             
-            return {"jsonrpc": "2.0", "id": request_id, "result": {"content": [result]}}
+            return {"jsonrpc": "2.0", "id": request_id, "result": {"content": [{"type": "text", "text": str(result)}]}}
         
         else:
             return {"jsonrpc": "2.0", "id": request_id, "error": {"code": -32601, "message": "Method not found"}}
