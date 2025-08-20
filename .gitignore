@@ -2,6 +2,9 @@
 *test*.py
 test_*.py
 *_test.py
+Git_code_test.py
+access_token_test.py
+test_mcp_oauth.py
 
 # Access tokens and secrets
 *token*.py
