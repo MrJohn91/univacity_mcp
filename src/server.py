@@ -263,9 +263,7 @@ Keep the tone helpful and informative. Translate technical metrics (CTR, views, 
 # ==========================
 def main():
     print("EduMatch MCP Server ready...")
-    import os
-    port = int(os.environ.get("PORT", 8000))
-    mcp.run(transport="ws", host="0.0.0.0", port=port)
+    mcp.run()
 
 if __name__ == "__main__":
     main()
