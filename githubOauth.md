@@ -1,3 +1,0 @@
-	•	GITHUB_CLIENT_ID = Ov23liugGqrsItstfCA8
-	•	GITHUB_CLIENT_SECRET = 
-	•	a random COOKIE_SECRET

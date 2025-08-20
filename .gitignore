@@ -10,6 +10,9 @@ test_mcp_oauth.py
 *token*.py
 *secret*.py
 *key*.py
+githubOauth.md
+*oauth*.md
+*config*.md
 
 # Environment files
 .env
