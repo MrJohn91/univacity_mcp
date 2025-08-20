@@ -10,6 +10,8 @@ app = FastAPI(title="EduMatch MCP API")
 # -----------------------------
 # Constants / Reusable definitions
 # -----------------------------
+ALLOWED_USERS = ["patunalu", "MrJohn91"]
+
 TOOLS = [
     {
         "name": "programs_list",
@@ -50,6 +52,27 @@ def mcp_response(request_id, result=None, error=None):
         response["result"] = result
     return response
 
+async def verify_authorized_user(request: Request):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="GitHub authentication required")
+    
+    access_token = auth_header.split(" ")[1]
+    
+    # Verify token with GitHub and get user info
+    user_resp = requests.get("https://api.github.com/user", headers={"Authorization": f"Bearer {access_token}"})
+    if user_resp.status_code != 200:
+        raise HTTPException(status_code=401, detail="Invalid GitHub token")
+    
+    user_data = user_resp.json()
+    username = user_data.get("login")
+    
+    # Check if user is authorized
+    if username not in ALLOWED_USERS:
+        raise HTTPException(status_code=403, detail=f"Access denied. User '{username}' not authorized")
+    
+    return user_data
+
 # -----------------------------
 # Root endpoint
 # -----------------------------
@@ -61,11 +84,13 @@ async def root():
 # Standard POST endpoints
 # -----------------------------
 @app.post("/programs")
-def programs_endpoint(args: ProgramsToolArguments):
+async def programs_endpoint(request: Request, args: ProgramsToolArguments):
+    await verify_authorized_user(request)
     return programs_list(args)
 
 @app.post("/rank")
-def rank_endpoint(args: RankProgramsArguments):
+async def rank_endpoint(request: Request, args: RankProgramsArguments):
+    await verify_authorized_user(request)
     return rank_programs(args)
 
 @app.get("/usage")
@@ -75,7 +100,6 @@ def usage():
 # -----------------------------
 # MCP handler
 # -----------------------------
-@app.post("/")
 async def mcp_handler(request_data: dict):
     request_id = request_data.get("id")
     method = request_data.get("method")
@@ -218,9 +242,17 @@ async def session_debug(request: Request):
 # -----------------------------
 # /streamable endpoint
 # -----------------------------
+@app.post("/")
+async def mcp_handler_endpoint(request: Request):
+    await verify_authorized_user(request)
+    request_data = await request.json()
+    return await mcp_handler(request_data)
+
 @app.post("/streamable")
 async def streamable_endpoint(request: Request):
-    return await mcp_handler(await request.json())
+    await verify_authorized_user(request)
+    request_data = await request.json()
+    return await mcp_handler(request_data)
 
 # -----------------------------
 # Run server
