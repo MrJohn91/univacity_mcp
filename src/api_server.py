@@ -8,6 +8,11 @@ from server import programs_list, rank_programs, usage_guide, ProgramsToolArgume
 
 app = FastAPI(title="EduMatch MCP API")
 
+@app.get("/")
+async def root():
+    """Root endpoint for basic server info"""
+    return {"message": "EduMatch MCP Server", "status": "running"}
+
 # -----------------------------
 # Standard POST endpoints
 # -----------------------------
