@@ -234,10 +234,15 @@ async def get_user(request: Request):
         if user_response.status_code == 200:
             return user_response.json()
         else:
-            raise HTTPException(status_code=400, detail="Failed to get user info")
+            raise HTTPException(status_code=401, detail="Failed to get user info")
             
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/callback")
+async def oauth_callback(code: str, state: str = None):
+    """Handle OAuth callback from GitHub"""
+    return {"code": code, "state": state, "message": "OAuth callback received"}
 
 # -----------------------------
 # StreamableHttp endpoint for MCP Inspector
