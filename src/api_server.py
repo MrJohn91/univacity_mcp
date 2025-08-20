@@ -139,6 +139,101 @@ async def mcp_handler(request_data: dict):
                 request_id,
                 result={"content": [{"type": "text", "text": str(result)}]},
             )
+        
+        elif method == "prompts/list":
+            return mcp_response(
+                request_id,
+                result={
+                    "prompts": [
+                        {
+                            "name": "program_summary",
+                            "description": "Template for creating user-friendly program summaries and recommendations",
+                            "arguments": []
+                        }
+                    ]
+                }
+            )
+        
+        elif method == "prompts/get":
+            prompt_name = params.get("name")
+            if prompt_name == "program_summary":
+                prompt_content = """
+When presenting educational programs to users, structure your response as follows:
+
+## Program Recommendations
+
+For each program, include:
+- **Program Name** at [Institution Name]
+- **Location**: Country
+- **Duration**: X months
+- **Tuition**: $X (if available)
+- **Popularity**: Describe engagement metrics in user-friendly terms
+- **Why it's a good match**: Based on their search criteria
+
+## Summary
+- Total programs found: X
+- Key insights about their options
+- Suggestions for refining search if needed
+
+Keep the tone helpful and informative. Translate technical metrics (CTR, views, impressions) into user-friendly language like "highly popular" or "well-regarded program."
+"""
+                return mcp_response(
+                    request_id,
+                    result={
+                        "description": "Template for creating user-friendly program summaries and recommendations",
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": {
+                                    "type": "text",
+                                    "text": prompt_content
+                                }
+                            }
+                        ]
+                    }
+                )
+            else:
+                return mcp_response(
+                    request_id,
+                    error={"code": -32601, "message": "Prompt not found"}
+                )
+        
+        elif method == "resources/list":
+            return mcp_response(
+                request_id,
+                result={
+                    "resources": [
+                        {
+                            "uri": "guide://usage",
+                            "name": "Usage Guide",
+                            "description": "Quick reference guide for using the EduMatch MCP server effectively",
+                            "mimeType": "application/json"
+                        }
+                    ]
+                }
+            )
+        
+        elif method == "resources/read":
+            resource_uri = params.get("uri")
+            if resource_uri == "guide://usage":
+                resource_content = usage_guide()
+                return mcp_response(
+                    request_id,
+                    result={
+                        "contents": [
+                            {
+                                "uri": "guide://usage",
+                                "mimeType": "application/json",
+                                "text": str(resource_content)
+                            }
+                        ]
+                    }
+                )
+            else:
+                return mcp_response(
+                    request_id,
+                    error={"code": -32601, "message": "Resource not found"}
+                )
 
         else:
             return mcp_response(
