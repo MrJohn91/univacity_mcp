@@ -1,6 +1,17 @@
-# Environment variables
+# Test files
+*test*.py
+test_*.py
+*_test.py
+
+# Access tokens and secrets
+*token*.py
+*secret*.py
+*key*.py
+
+# Environment files
 .env
-*.env
+.env.local
+.env.*.local
 
 # Python
 __pycache__/
@@ -24,11 +35,6 @@ wheels/
 .installed.cfg
 *.egg
 
-
-# Database
-*.db
-*.sqlite3
-
 # IDE
 .vscode/
 .idea/
@@ -38,14 +44,3 @@ wheels/
 # OS
 .DS_Store
 Thumbs.db
-
-# Data files
-local_data/
-metastore_db/
-
-
-# Node modules
-node_modules/
-
-# Database dumps
-*.dump
