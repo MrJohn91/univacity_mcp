@@ -244,6 +244,15 @@ async def oauth_callback(code: str, state: str = None):
     """Handle OAuth callback from GitHub"""
     return {"code": code, "state": state, "message": "OAuth callback received"}
 
+@app.get("/session")
+async def session_debug(request: Request):
+    """Debug endpoint to see what's being sent to /session"""
+    return {
+        "message": "Redirected to /session instead of /callback",
+        "query_params": dict(request.query_params),
+        "url": str(request.url)
+    }
+
 # -----------------------------
 # StreamableHttp endpoint for MCP Inspector
 # -----------------------------
