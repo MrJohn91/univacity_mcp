@@ -1,7 +1,9 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi.responses import StreamingResponse, RedirectResponse
 import os
 import asyncio
+import requests
+from urllib.parse import urlencode
 from server import programs_list, rank_programs, usage_guide, ProgramsToolArguments, RankProgramsArguments
 
 app = FastAPI(title="EduMatch MCP API")
@@ -168,6 +170,74 @@ async def sse_endpoint():
             await asyncio.sleep(30)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+# -----------------------------
+# GitHub OAuth endpoints
+# -----------------------------
+@app.get("/auth/github/authorize")
+async def github_authorize(client_id: str, redirect_uri: str, scope: str = "read:user", state: str = None):
+    """Redirect to GitHub for OAuth authorization"""
+    params = {
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "scope": scope,
+        "state": state
+    }
+    github_url = f"https://github.com/login/oauth/authorize?{urlencode(params)}"
+    return RedirectResponse(url=github_url)
+
+@app.post("/auth/github/token")
+async def github_token(
+    client_id: str = Form(),
+    client_secret: str = Form(),
+    code: str = Form(),
+    redirect_uri: str = Form()
+):
+    """Exchange authorization code for access token"""
+    try:
+        # Exchange code for token with GitHub
+        token_response = requests.post(
+            "https://github.com/login/oauth/access_token",
+            data={
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "code": code,
+                "redirect_uri": redirect_uri
+            },
+            headers={"Accept": "application/json"}
+        )
+        
+        if token_response.status_code == 200:
+            return token_response.json()
+        else:
+            raise HTTPException(status_code=400, detail="Token exchange failed")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/user")
+async def get_user(request: Request):
+    """Get authenticated user info"""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+    
+    access_token = auth_header.split(" ")[1]
+    
+    try:
+        # Get user info from GitHub
+        user_response = requests.get(
+            "https://api.github.com/user",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        
+        if user_response.status_code == 200:
+            return user_response.json()
+        else:
+            raise HTTPException(status_code=400, detail="Failed to get user info")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # -----------------------------
 # StreamableHttp endpoint for MCP Inspector
