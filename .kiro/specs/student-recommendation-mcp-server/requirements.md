@@ -116,7 +116,7 @@ The MCP server reads data directly from PostgreSQL, which is pre-loaded and main
 4. WHEN caching is enabled THEN the system SHALL achieve 80%+ cache hit rate for repeated queries
 5. WHEN system load is high THEN the system SHALL implement graceful degradation and queue management
 
-## MCP Server Components (MVP)
+## MCP Server Components (IMPLEMENTED)
 
 ### Tools (2 functions that DO things)
 
@@ -130,6 +130,55 @@ The MCP server reads data directly from PostgreSQL, which is pre-loaded and main
 ### Prompts (1 formatting template)
 
 1. **`program_summary`** - Template telling AI assistants how to nicely format program recommendations for users with structured output
+
+## Authentication & Security (IMPLEMENTED)
+
+### 10. GitHub OAuth Authentication
+
+**User Story:** As a system administrator, I want to secure the MCP server with GitHub OAuth authentication, so that only authorized users can access educational program data.
+
+#### Acceptance Criteria
+
+1. WHEN accessing MCP endpoints THEN the system SHALL require valid GitHub OAuth token
+2. WHEN validating tokens THEN the system SHALL verify against GitHub API
+3. WHEN checking authorization THEN the system SHALL only allow specific GitHub users (patunalu, MrJohn91)
+4. WHEN authentication fails THEN the system SHALL return appropriate HTTP error codes
+5. WHEN tokens are invalid THEN the system SHALL provide clear error messages
+
+### OAuth Configuration
+
+- **Client ID**: `YOUR_GITHUB_CLIENT_ID`
+- **Authorized Users**: `["user1", "user2"]`
+- **Callback URL**: `https://your-domain.com/callback`
+- **Scope**: `read:user`
+
+### OAuth Endpoints
+
+1. **`/auth/github/authorize`** - GitHub OAuth authorization redirect
+2. **`/auth/github/token`** - Token exchange endpoint
+3. **`/user`** - Get authenticated user information
+4. **`/callback`** - OAuth callback handler
+
+## Deployment Architecture (IMPLEMENTED)
+
+### 11. Dual Server Architecture
+
+**User Story:** As a developer, I want both local MCP protocol support and cloud HTTP API access, so that the system can serve both Claude Desktop integration and web-based clients.
+
+#### Acceptance Criteria
+
+1. WHEN running locally THEN the system SHALL provide pure MCP protocol via server.py
+2. WHEN deployed to cloud THEN the system SHALL provide HTTP API via api_server.py
+3. WHEN using Claude Desktop THEN the system SHALL connect via stdio transport
+4. WHEN using web clients THEN the system SHALL connect via HTTP with authentication
+5. WHEN testing with MCP Inspector THEN both local and cloud servers SHALL be accessible
+
+### Server Components
+
+1. **`server.py`** - Pure FastMCP implementation for local use
+2. **`api_server.py`** - FastAPI wrapper with OAuth for cloud deployment
+3. **Database Migration** - Local PostgreSQL → Cloud PostgreSQL (Render)
+4. **CDN Integration** - Cloudflare CDN for global access
 
 ## Technical Notes
 
@@ -183,14 +232,56 @@ The MCP server is configured in Claude Desktop with the following settings:
 5. **Claude MCP Call**: `prompts/get program_summary` to get formatting template
 6. **Claude Response**: Formats results using the template and presents to user
 
-## Development Commands
+## Development Commands (UPDATED)
 
-### Local Development
+### Local MCP Server (for Claude Desktop)
 ```bash
+# Pure MCP protocol server
+uv run src/server.py
+
+# Development mode with debugging
 uv run mcp dev ./src/server.py
 ```
 
-### Production with Claude Desktop
+### Local HTTP API Server (for testing)
 ```bash
-uv --directory /Users/vee/Desktop/univacity_mcp run src/server.py
+# HTTP API server with authentication
+uv run src/api_server.py
+# Runs on http://localhost:8000
+```
+
+### Cloud Deployment Commands
+```bash
+# Deploy to Render (automatic on git push)
+git add .
+git commit -m "Deploy changes"
+git push origin main
+
+# Test cloud deployment
+curl -H "Authorization: Bearer TOKEN" \
+  https://your-domain.com/streamable
+```
+
+### MCP Inspector Testing
+```bash
+# Install and run MCP Inspector
+git clone https://github.com/modelcontextprotocol/inspector.git
+cd inspector
+npm install
+npm start
+
+# Test local server: http://localhost:8000/streamable
+# Test cloud server: https://your-domain.com/streamable
+```
+
+### Claude Desktop Configuration
+```json
+{
+  "mcpServers": {
+    "edumatch": {
+      "command": "/opt/homebrew/bin/uv",
+      "args": ["--directory", "/Users/vee/Desktop/univacity_mcp", "run", "src/server.py"]
+    }
+  }
+}
 ```
