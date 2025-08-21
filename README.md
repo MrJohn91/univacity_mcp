@@ -44,7 +44,7 @@ The project implements a dual-server architecture to support both local MCP prot
    - Includes GitHub OAuth authentication
    - Enables cloud deployment and web testing
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 
@@ -232,7 +232,7 @@ OAuth is like getting a temporary pass: you prove who you are to GitHub, GitHub 
    - Engagement metrics translation
    - Consistent recommendation styling
 
-## 🗄️ Database Architecture
+##  Database Architecture
 
 ### Local to Cloud Migration
 
@@ -284,7 +284,7 @@ CREATE TABLE programs (
 );
 ```
 
-## 🧪 Testing & Development
+## Testing & Development
 
 ### MCP Inspector Testing
 
@@ -325,7 +325,7 @@ Configure Claude Desktop to use the local MCP server:
 }
 ```
 
-## 📝 API Endpoints
+## API Endpoints
 
 ### MCP Protocol Endpoints
 - `POST /` - MCP JSON-RPC handler
@@ -381,7 +381,7 @@ univacity_mcp/
 └── pyproject.toml                   # UV project configuration
 ```
 
-## 🚀 Deployment
+## Deployment
 
 ### Local Development Commands
 ```bash
@@ -424,7 +424,7 @@ curl -X POST https://your-domain.com/streamable \
   -d '{"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}'
 ```
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -446,4 +446,4 @@ For issues and questions:
 
 ---
 
-**Built with ❤️ using FastMCP, FastAPI, and PostgreSQL**
+**Built with using FastMCP, FastAPI, and PostgreSQL**
